@@ -1,21 +1,26 @@
 package main
 
 import (
-	"log"
+	"go.uber.org/zap"
 
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/worker"
+	"go.temporal.io/server/common/log"
 
 	"github.com/temporalio/samples-go/fileprocessing"
 )
 
 func main() {
+	logger, err := zap.NewDevelopment()
+	defer logger.Sync()
+
 	// The client and worker are heavyweight objects that should be created once per process.
 	c, err := client.NewClient(client.Options{
 		HostPort: client.DefaultHostPort,
+		Logger:   log.NewZapAdapter(logger),
 	})
 	if err != nil {
-		log.Fatalln("Unable to create client", err)
+		logger.Fatal("Unable to create client", zap.Error(err))
 	}
 	defer c.Close()
 
@@ -29,6 +34,6 @@ func main() {
 
 	err = w.Run(worker.InterruptCh())
 	if err != nil {
-		log.Fatalln("Unable to start worker", err)
+		logger.Fatal("Unable to start worker", zap.Error(err))
 	}
 }
