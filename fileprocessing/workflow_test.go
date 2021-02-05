@@ -28,7 +28,6 @@ func (s *UnitTestSuite) Test_SampleFileProcessingWorkflow() {
 
 	env.OnActivity(a.DownloadFileActivity, mock.Anything, "file1").Return("file2", nil)
 	env.OnActivity(a.ProcessFileActivity, mock.Anything, "file2").Return("file3", nil)
-	env.OnActivity(a.UploadFileActivity, mock.Anything, "file3").Return(nil)
 
 	env.RegisterActivity(a)
 

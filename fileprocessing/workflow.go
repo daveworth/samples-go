@@ -9,7 +9,7 @@ import (
 )
 
 // SampleFileProcessingWorkflow workflow definition
-func SampleFileProcessingWorkflow(ctx workflow.Context, fileName string) (err error) {
+func SampleFileProcessingWorkflow(ctx workflow.Context, fileURL string) (err error) {
 	ao := workflow.ActivityOptions{
 		StartToCloseTimeout: time.Minute,
 		HeartbeatTimeout:    time.Second * 2, // such a short timeout to make sample fail over very fast
@@ -26,7 +26,7 @@ func SampleFileProcessingWorkflow(ctx workflow.Context, fileName string) (err er
 	// retry individual activities as well as the whole sequence discriminating between different types of errors.
 	// See the retryactivity sample for a more sophisticated retry implementation.
 	for i := 1; i < 5; i++ {
-		err = processFile(ctx, fileName)
+		err = processFile(ctx, fileURL)
 		if err == nil {
 			break
 		}
@@ -39,7 +39,7 @@ func SampleFileProcessingWorkflow(ctx workflow.Context, fileName string) (err er
 	return err
 }
 
-func processFile(ctx workflow.Context, fileName string) (err error) {
+func processFile(ctx workflow.Context, fileURL string) (err error) {
 	so := &workflow.SessionOptions{
 		CreationTimeout:  time.Minute,
 		ExecutionTimeout: time.Minute,
@@ -52,17 +52,13 @@ func processFile(ctx workflow.Context, fileName string) (err error) {
 
 	var downloadedName string
 	var a *Activities
-	err = workflow.ExecuteActivity(sessionCtx, a.DownloadFileActivity, fileName).Get(sessionCtx, &downloadedName)
+	err = workflow.ExecuteActivity(sessionCtx, a.DownloadFileActivity, fileURL).Get(sessionCtx, &downloadedName)
 	if err != nil {
 		return err
 	}
 
-	var processedFileName string
-	err = workflow.ExecuteActivity(sessionCtx, a.ProcessFileActivity, downloadedName).Get(sessionCtx, &processedFileName)
-	if err != nil {
-		return err
-	}
-
-	err = workflow.ExecuteActivity(sessionCtx, a.UploadFileActivity, processedFileName).Get(sessionCtx, nil)
+	var digest string
+	err = workflow.ExecuteActivity(sessionCtx, a.ProcessFileActivity, downloadedName).Get(sessionCtx, &digest)
+	workflow.GetLogger(ctx).Info("file at URL digested", "url", fileURL, "digest", digest)
 	return err
 }

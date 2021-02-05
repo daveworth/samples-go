@@ -25,7 +25,7 @@ func main() {
 	w := worker.New(c, "fileprocessing", workerOptions)
 
 	w.RegisterWorkflow(fileprocessing.SampleFileProcessingWorkflow)
-	w.RegisterActivity(&fileprocessing.Activities{BlobStore: &fileprocessing.BlobStore{}})
+	w.RegisterActivity(&fileprocessing.Activities{})
 
 	err = w.Run(worker.InterruptCh())
 	if err != nil {
